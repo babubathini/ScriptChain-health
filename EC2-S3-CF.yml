@@ -1,0 +1,60 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Create an S3 bucket and an EC2 instance
+
+Resources:
+  MyS3Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: scriptchain-health
+
+# Uncomment this resource block if you would like to create new VPC
+
+  # MyVPC:
+  #   Type: AWS::EC2::VPC
+  #   Properties:
+  #     CidrBlock: "10.0.0.0/16"
+
+  # MySubnet:
+  #   Type: AWS::EC2::Subnet
+  #   Properties:
+  #     VpcId: !Ref MyVPC
+  #     CidrBlock: "10.0.0.0/24"
+
+  MySecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allow SSH and HTTP access
+      VpcId: vpc-7a16331f 
+      SecurityGroupIngress:
+        - CidrIp: 0.0.0.0/0
+          IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+        - CidrIp: 0.0.0.0/0
+          IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+      Tags:
+        - Key: Name
+          Value: ScriptChain-health
+
+  MyEC2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t2.micro # Using free tire
+      ImageId: ami-08a52ddb321b32a8c  # Amazon Linux AMI ID
+      KeyName: ScriptChain  # EC2 key pair
+      NetworkInterfaces:
+        - AssociatePublicIpAddress: true  # Auto-assign public IP
+          DeviceIndex: '0'
+          SubnetId: subnet-0719672a # Using existing VPC and subnets
+          GroupSet:
+            - !Ref MySecurityGroup
+      BlockDeviceMappings: # If you need EBS to your instance
+        - DeviceName: /dev/xvda
+          Ebs:
+            VolumeSize: '10' 
+            VolumeType: gp2 # Using General Purpose SSD
+      Tags:
+        - Key: Name
+          Value: ScriptChain-health
